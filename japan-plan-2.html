@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Japón 🇯🇵">
+<title>Plan Japón 🇯🇵</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{background:#080810;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;padding-bottom:40px}
+input::-webkit-outer-spin-button,input::-webkit-inner-spin-button{opacity:1}
+input,textarea,button{font-family:inherit}
+select option{background:#1a1a2e}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script>
+const {createElement:h,useState,useEffect,useMemo}=React;
+
+// ── COLORS ──────────────────────────────────────────────────────
+const C={gold:"#E8C547",teal:"#4ECDC4",red:"#FC5C65",purple:"#A29BFE",green:"#55EFC4",blue:"#74B9FF"};
+
+// ── PHASES ──────────────────────────────────────────────────────
+const PHASES=[
+  {id:1,name:"Base",weeks:[1,2,3,4],color:C.teal,rpe:"8",sets:"3–4",reps:"10–12",desc:"Readaptación al split PPL. Técnica y base de volumen."},
+  {id:2,name:"Intensificación",weeks:[5,6,7,8,9,10],color:C.gold,rpe:"8–9",sets:"4–5",reps:"6–10",desc:"Máxima señal de hipertrofia. Cargas altas, reps bajas."},
+  {id:3,name:"Variantes",weeks:[11,12,13,14,15,16,17,18,19,20],color:C.purple,rpe:"8–9",sets:"4–5",reps:"6–15",desc:"Cambio de ejercicios para reactivar señal de crecimiento."},
+  {id:4,name:"Peaking",weeks:[21,22,23,24,25],color:C.red,rpe:"9–10",sets:"4–5",reps:"4–8",desc:"Cargas máximas históricas. Menor volumen, mayor intensidad."},
+  {id:5,name:"Deload",weeks:[26],color:C.green,rpe:"6–7",sets:"2",reps:"10–12",desc:"Volumen -40%. Llegas a Japón recuperado y lleno."}
+];
+
+const WARMUP=["Hip 90/90 stretch — 3×30s/lado","Clamshell con banda — 3×15/lado","Rotación interna cadera en suelo — 3×10/lado","Glúteo medio de pie con banda — 3×15/lado"];
+const DAYS=["lunes","martes","miercoles","jueves","viernes","sabado"];
+const DLABELS={lunes:"Lun",martes:"Mar",miercoles:"Mié",jueves:"Jue",viernes:"Vie",sabado:"Sáb"};
+const DICONS={lunes:"💪",martes:"💪",miercoles:"🦵",jueves:"💪",viernes:"🦵",sabado:"🚶"};
+const DCOLORS={lunes:C.teal,martes:C.blue,miercoles:C.gold,jueves:C.teal,viernes:C.gold,sabado:C.green};
+const JAPAN_START=new Date(2026,7,31);
+
+function getPhase(w){return PHASES.find(p=>p.weeks.includes(w));}
+function getWeekDates(w){
+  const s=new Date(JAPAN_START);s.setDate(s.getDate()+(w-1)*7);
+  const e=new Date(s);e.setDate(e.getDate()+6);
+  const f=d=>d.toLocaleDateString("es-MX",{day:"numeric",month:"short"});
+  return f(s)+" – "+f(e);
+}
+
+// ── WORKOUT DATA ─────────────────────────────────────────────────
+function getPushA(w){
+  if(w<=2)return{t:"💪 Push — Lunes",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"3",r:"12-12-12",rpe:"8",d:"2 min"},
+    {n:"Press inclinado (mancuernas)",s:"3",r:"12-12-12",rpe:"8",d:"2 min"},
+    {n:"Press militar sentado (mancuernas)",s:"3",r:"12-12-10",rpe:"8",d:"90s"},
+    {n:"Elevaciones laterales",s:"3",r:"15-15-15",rpe:"8",d:"60s"},
+    {n:"Tricep pushdown en polea",s:"3",r:"15-15-15",rpe:"8",d:"60s"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"15-15-15",rpe:"8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=4)return{t:"💪 Push — Lunes",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"10-10-8-8",rpe:"8",d:"2 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"10-10-10-10",rpe:"8",d:"2 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"10-10-8-8",rpe:"8-9",d:"90s"},
+    {n:"Elevaciones laterales",s:"4",r:"12-12-12-12",rpe:"8",d:"60s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"12-12-12-12",rpe:"8",d:"60s"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"12-12-10",rpe:"8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=7)return{t:"💪 Push — Lunes · Fuerza",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"8-8-8-6",rpe:"8-9",d:"2 min"},
+    {n:"Elevaciones laterales",s:"4",r:"12-12-10-10",rpe:"8-9",d:"60s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Extensión tríceps sobre cabeza",s:"4",r:"10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=10)return{t:"💪 Push — Lunes · Fuerza",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"5",r:"8-8-6-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"8-8-6-6",rpe:"9",d:"2 min"},
+    {n:"Elevaciones laterales",s:"5",r:"12-12-10-10-10",rpe:"8-9",d:"60s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"10-10-8-8",rpe:"9",d:"90s"},
+    {n:"Extensión tríceps sobre cabeza",s:"4",r:"10-10-8-8",rpe:"9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=14)return{t:"💪 Push — Lunes · Fuerza (Variantes)",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca máquina convergente",s:"4",r:"6-6-6-6",rpe:"8-9",d:"3 min"},
+    {n:"Cable crossover alto",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Press Arnold sentado",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Cable lateral raise",s:"4",r:"12-12-12-12",rpe:"8",d:"60s"},
+    {n:"Fondos en máquina",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2 min"},
+    {n:"Skullcrusher con mancuernas",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2 min"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=20)return{t:"💪 Push — Lunes · Fuerza Máx (Variantes)",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca máquina convergente",s:"5",r:"6-6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Cable crossover alto",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Press Arnold sentado",s:"4",r:"8-8-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Cable lateral raise",s:"5",r:"12-12-12-10-10",rpe:"8-9",d:"60s"},
+    {n:"Fondos en máquina",s:"4",r:"8-8-6-6",rpe:"9",d:"2 min"},
+    {n:"Skullcrusher con mancuernas",s:"4",r:"8-8-6-6",rpe:"9",d:"2 min"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=23)return{t:"💪 Push — Lunes · Peaking",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"6-6-6-4",rpe:"9",d:"3 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"6-6-6-4",rpe:"9",d:"2.5 min"},
+    {n:"Elevaciones laterales",s:"4",r:"10-10-10-10",rpe:"9",d:"75s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"8-8-8-8",rpe:"9",d:"2 min"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"8-8-8",rpe:"9",d:"2 min"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  if(w<=25)return{t:"💪 Push — Lunes · Peaking Máximo",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"5",r:"6-4-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"6-4-4-4",rpe:"9",d:"3 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"6-4-4-4",rpe:"9",d:"2.5 min"},
+    {n:"Elevaciones laterales",s:"4",r:"10-10-10-10",rpe:"9",d:"75s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"8-8-6-6",rpe:"9",d:"2 min"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"8-8-8",rpe:"9",d:"2 min"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  return{t:"💪 Push — Deload ⚡",s:"Misma carga · Volumen -40%",e:[
+    {n:"Press banca plano (mancuernas)",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Press inclinado (mancuernas)",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Press militar sentado",s:"2",r:"10-10",rpe:"6-7",d:"90s"},
+    {n:"Elevaciones laterales",s:"2",r:"12-12",rpe:"6-7",d:"60s"},
+    {n:"Tricep pushdown",s:"2",r:"12-12",rpe:"6-7",d:"60s"},
+    {n:"Face pulls",s:"2",r:"15-15",rpe:"6",d:"60s"},
+  ]};
+}
+
+function getPushB(w){
+  const liss={n:"🏃 LISS — Caminata inclinada 20 min · 6km/h · 8-10% · Zona 2",s:"1",r:"20 min",rpe:"zona 2",d:"—"};
+  if(w===26)return getPushA(26);
+  const base=getPushA(w);
+  if(w<=4)return{t:"💪 Push — Jueves + 20min LISS",s:base.s,e:[...base.e,liss]};
+  if(w<=7)return{t:"💪 Push — Jueves · Resistencia + LISS",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"12-12-12-12",rpe:"7-8",d:"90s"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"12-12-12-12",rpe:"7-8",d:"90s"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"12-12-12-12",rpe:"7-8",d:"90s"},
+    {n:"Elevaciones laterales",s:"4",r:"15-15-15-15",rpe:"7-8",d:"45s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"15-15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    liss
+  ]};
+  if(w<=10)return{t:"💪 Push — Jueves · Resistencia + LISS",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"15-15-15-12",rpe:"7-8",d:"90s"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"15-15-15-12",rpe:"7-8",d:"90s"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"15-15-12-12",rpe:"8",d:"90s"},
+    {n:"Elevaciones laterales",s:"5",r:"15-15-15-15-15",rpe:"8",d:"45s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"15-15-15-12",rpe:"8",d:"60s"},
+    {n:"Extensión tríceps sobre cabeza",s:"4",r:"15-15-12-12",rpe:"8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    liss
+  ]};
+  if(w<=14)return{t:"💪 Push — Jueves · Resistencia (Variantes) + LISS",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca máquina convergente",s:"4",r:"15-15-15-15",rpe:"7-8",d:"90s"},
+    {n:"Cable crossover alto",s:"4",r:"15-15-15-15",rpe:"7-8",d:"90s"},
+    {n:"Press Arnold sentado",s:"4",r:"15-15-12-12",rpe:"7-8",d:"90s"},
+    {n:"Cable lateral raise",s:"4",r:"20-20-20-20",rpe:"7-8",d:"45s"},
+    {n:"Fondos en máquina",s:"4",r:"15-15-15-15",rpe:"7-8",d:"90s"},
+    {n:"Skullcrusher con mancuernas",s:"4",r:"15-15-15-15",rpe:"7-8",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    liss
+  ]};
+  if(w<=20)return{t:"💪 Push — Jueves · Resistencia Máx (Variantes) + LISS",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca máquina convergente",s:"4",r:"15-15-15-12",rpe:"8",d:"90s"},
+    {n:"Cable crossover alto",s:"4",r:"15-15-12-12",rpe:"8",d:"90s"},
+    {n:"Press Arnold sentado",s:"4",r:"15-12-12-12",rpe:"8",d:"90s"},
+    {n:"Cable lateral raise",s:"4",r:"20-20-20-15",rpe:"8",d:"45s"},
+    {n:"Fondos en máquina",s:"4",r:"15-15-12-12",rpe:"8",d:"90s"},
+    {n:"Skullcrusher con mancuernas",s:"4",r:"15-15-12-12",rpe:"8",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    liss
+  ]};
+  if(w<=23)return{t:"💪 Push — Jueves · Peaking",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2 min"},
+    {n:"Elevaciones laterales",s:"4",r:"12-12-10-10",rpe:"8-9",d:"60s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"10-10-8-8",rpe:"8-9",d:"90s"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"10-10-8",rpe:"8-9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+  return{t:"💪 Push — Jueves · Peaking Máximo",s:"Pecho · Hombros · Tríceps",e:[
+    {n:"Press banca plano (mancuernas)",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Press inclinado (mancuernas)",s:"4",r:"8-6-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Press militar sentado (mancuernas)",s:"4",r:"8-6-6-6",rpe:"9",d:"2 min"},
+    {n:"Elevaciones laterales",s:"4",r:"12-10-10-10",rpe:"9",d:"60s"},
+    {n:"Tricep pushdown en polea",s:"4",r:"10-8-8-8",rpe:"9",d:"90s"},
+    {n:"Extensión tríceps sobre cabeza",s:"3",r:"10-8-8",rpe:"9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+  ]};
+}
+
+function getPull(w){
+  if(w<=2)return{t:"💪 Pull + Core — Martes",s:"Espalda · Bíceps · Core",e:[
+    {n:"Jalón al pecho agarre ancho",s:"4",r:"10-10-10-10",rpe:"8",d:"2 min"},
+    {n:"Remo en polea sentado",s:"4",r:"10-10-10-10",rpe:"8",d:"2 min"},
+    {n:"Jalón agarre neutro/cerrado",s:"3",r:"10-10-10",rpe:"8",d:"90s"},
+    {n:"Rear delt fly en máquina",s:"3",r:"15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Curl bíceps mancuernas alterno",s:"3",r:"12-12-12",rpe:"8",d:"60s"},
+    {n:"Curl martillo",s:"3",r:"12-12-12",rpe:"8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha frontal",s:"3",r:"35s-35s-35s",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"3",r:"10-10-10/lado",rpe:"7",d:"60s"},
+  ]};
+  if(w<=4)return{t:"💪 Pull + Core — Martes",s:"Espalda · Bíceps · Core",e:[
+    {n:"Jalón al pecho agarre ancho",s:"4",r:"10-10-8-8",rpe:"8",d:"2 min"},
+    {n:"Remo en polea sentado",s:"4",r:"10-10-8-8",rpe:"8",d:"2 min"},
+    {n:"Jalón agarre neutro/cerrado",s:"4",r:"10-10-10-10",rpe:"8",d:"90s"},
+    {n:"Rear delt fly en máquina",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+    {n:"Curl bíceps mancuernas alterno",s:"4",r:"12-12-10-10",rpe:"8",d:"60s"},
+    {n:"Curl martillo",s:"3",r:"12-12-12",rpe:"8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha frontal",s:"3",r:"40s-40s-40s",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"3",r:"12-12-12/lado",rpe:"8",d:"60s"},
+  ]};
+  if(w<=7)return{t:"💪 Pull + Core — Martes",s:"Espalda · Bíceps · Core",e:[
+    {n:"Jalón al pecho agarre ancho",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Remo en polea sentado",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Jalón agarre neutro/cerrado",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2 min"},
+    {n:"Rear delt fly en máquina",s:"4",r:"12-12-12-12",rpe:"8",d:"60s"},
+    {n:"Curl bíceps mancuernas alterno",s:"4",r:"10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Curl martillo",s:"4",r:"10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha frontal",s:"3",r:"45s-45s-45s",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"12-12-12-12/lado",rpe:"8",d:"60s"},
+  ]};
+  if(w<=10)return{t:"💪 Pull + Core — Martes",s:"Espalda · Bíceps · Core",e:[
+    {n:"Jalón al pecho agarre ancho",s:"5",r:"8-8-6-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Remo en polea sentado",s:"5",r:"8-8-6-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Jalón agarre neutro/cerrado",s:"4",r:"8-8-8-6",rpe:"9",d:"2 min"},
+    {n:"Rear delt fly en máquina",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+    {n:"Curl bíceps mancuernas alterno",s:"4",r:"10-10-8-8",rpe:"9",d:"90s"},
+    {n:"Curl martillo",s:"4",r:"10-10-8-8",rpe:"9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha frontal",s:"4",r:"50s-50s-50s-50s",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"12-12-12-12/lado",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=14)return{t:"💪 Pull + Core — Martes · Resistencia (Variantes)",s:"Espalda · Bíceps · Core",e:[
+    {n:"Dominadas asistidas",s:"4",r:"12-12-10-10",rpe:"8",d:"2 min"},
+    {n:"Remo en máquina",s:"4",r:"15-15-15-15",rpe:"7-8",d:"90s"},
+    {n:"Jalón en polea baja sentado",s:"4",r:"15-15-15-15",rpe:"7-8",d:"90s"},
+    {n:"Pájaro mancuernas banco inclinado",s:"4",r:"15-15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Curl en polea baja",s:"4",r:"15-15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Curl martillo en polea",s:"4",r:"15-15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha con extensión de brazo",s:"3",r:"8-8-8/lado",rpe:"—",d:"60s"},
+    {n:"Pallof press con banda",s:"4",r:"15-15-15-15/lado",rpe:"7-8",d:"45s"},
+  ]};
+  if(w<=20)return{t:"💪 Pull + Core — Martes · Resistencia Máx",s:"Espalda · Bíceps · Core",e:[
+    {n:"Dominadas asistidas",s:"5",r:"12-12-10-10-10",rpe:"8-9",d:"2 min"},
+    {n:"Remo en máquina",s:"5",r:"15-15-12-12-12",rpe:"8",d:"90s"},
+    {n:"Jalón en polea baja sentado",s:"4",r:"15-15-12-12",rpe:"8",d:"90s"},
+    {n:"Pájaro mancuernas banco inclinado",s:"4",r:"15-15-15-12",rpe:"8",d:"60s"},
+    {n:"Curl en polea baja",s:"4",r:"15-15-12-12",rpe:"8-9",d:"60s"},
+    {n:"Curl martillo en polea",s:"4",r:"15-15-12-12",rpe:"8-9",d:"60s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha con extensión de brazo",s:"3",r:"8-8-8/lado",rpe:"—",d:"60s"},
+    {n:"Pallof press con banda",s:"4",r:"15-15-15-15/lado",rpe:"8",d:"45s"},
+  ]};
+  if(w<=23)return{t:"💪 Pull + Core — Martes · Peaking",s:"Espalda · Bíceps · Core",e:[
+    {n:"Jalón al pecho agarre ancho",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Remo en polea sentado",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Jalón agarre neutro/cerrado",s:"4",r:"6-6-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Rear delt fly en máquina",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+    {n:"Curl bíceps mancuernas alterno",s:"4",r:"8-8-6-6",rpe:"9",d:"90s"},
+    {n:"Curl martillo",s:"4",r:"8-8-6-6",rpe:"9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha frontal",s:"4",r:"55s-55s-55s-55s",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"12-12-12-12/lado",rpe:"9",d:"60s"},
+  ]};
+  if(w<=25)return{t:"💪 Pull + Core — Martes · Peaking Máximo",s:"Espalda · Bíceps · Core",e:[
+    {n:"Jalón al pecho agarre ancho",s:"5",r:"6-4-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Remo en polea sentado",s:"5",r:"6-4-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Jalón agarre neutro/cerrado",s:"4",r:"6-6-4-4",rpe:"9",d:"2.5 min"},
+    {n:"Rear delt fly en máquina",s:"4",r:"12-12-12-12",rpe:"9",d:"60s"},
+    {n:"Curl bíceps mancuernas alterno",s:"4",r:"8-6-6-6",rpe:"9",d:"90s"},
+    {n:"Curl martillo",s:"4",r:"8-6-6-6",rpe:"9",d:"90s"},
+    {n:"Face pulls",s:"3",r:"15-15-15",rpe:"7",d:"60s"},
+    {n:"Plancha frontal",s:"4",r:"60s-60s-60s-60s",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"15-15-15-15/lado",rpe:"9",d:"60s"},
+  ]};
+  return{t:"💪 Pull + Core — Deload ⚡",s:"Misma carga · Volumen -40%",e:[
+    {n:"Jalón al pecho agarre ancho",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Remo en polea sentado",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Curl bíceps mancuernas alterno",s:"2",r:"12-12",rpe:"6-7",d:"60s"},
+    {n:"Face pulls",s:"2",r:"15-15",rpe:"6",d:"60s"},
+    {n:"Plancha frontal",s:"2",r:"40s-40s",rpe:"—",d:"45s"},
+  ]};
+}
+
+function getLegsA(w){
+  if(w<=2)return{t:"🦵 Legs A — Miércoles · Cuádriceps",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa de pierna",s:"3",r:"12-12-12",rpe:"8",d:"2 min"},
+    {n:"Sentadilla goblet (mancuerna)",s:"3",r:"12-12-12",rpe:"8",d:"2 min"},
+    {n:"Extensión de cuádriceps",s:"3",r:"15-15-15",rpe:"8",d:"90s"},
+    {n:"Hip thrust con barra",s:"3",r:"12-12-12",rpe:"8",d:"2 min"},
+    {n:"Abducción de cadera (máquina)",s:"3",r:"15-15-15",rpe:"7-8",d:"60s"},
+    {n:"Gemelo de pie en máquina",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+  ]};
+  if(w<=4)return{t:"🦵 Legs A — Miércoles · Cuádriceps",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa de pierna",s:"4",r:"10-10-8-8",rpe:"8",d:"2 min"},
+    {n:"Sentadilla goblet (mancuerna)",s:"4",r:"10-10-10-10",rpe:"8",d:"2 min"},
+    {n:"Extensión de cuádriceps",s:"4",r:"12-12-12-12",rpe:"8-9",d:"90s"},
+    {n:"Hip thrust con barra",s:"4",r:"10-10-8-8",rpe:"8-9",d:"2 min"},
+    {n:"Abducción de cadera (máquina)",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+    {n:"Gemelo de pie en máquina",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+  ]};
+  if(w<=7)return{t:"🦵 Legs A — Miércoles · Cuádriceps",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa de pierna",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Sentadilla goblet (mancuerna)",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Extensión de cuádriceps",s:"4",r:"10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Hip thrust con barra",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Abducción de cadera (máquina)",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+    {n:"Gemelo de pie en máquina",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=10)return{t:"🦵 Legs A — Miércoles · Cuádriceps",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa de pierna",s:"5",r:"8-8-6-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Sentadilla goblet (mancuerna)",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Extensión de cuádriceps",s:"5",r:"10-10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Hip thrust con barra",s:"5",r:"8-8-6-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Abducción de cadera (máquina)",s:"4",r:"15-15-15-15",rpe:"8-9",d:"60s"},
+    {n:"Gemelo de pie en máquina",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=14)return{t:"🦵 Legs A — Miércoles · Fuerza (Variantes)",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa unilateral (una pierna)",s:"4",r:"8-8-8-8/pierna",rpe:"8-9",d:"2.5 min"},
+    {n:"Sentadilla en multipower",s:"4",r:"6-6-6-6",rpe:"8-9",d:"3 min"},
+    {n:"Extensión cuádriceps pie punta/neutro",s:"4",r:"10-10-10-10",rpe:"8-9",d:"90s"},
+    {n:"Hip thrust barra + banda",s:"4",r:"8-8-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Abducción polea baja con tobillera",s:"4",r:"12-12-12-12/lado",rpe:"8",d:"60s"},
+    {n:"Gemelo en prensa de pierna",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=20)return{t:"🦵 Legs A — Miércoles · Fuerza Máx (Variantes)",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa unilateral (una pierna)",s:"5",r:"6-6-6-4-4/pierna",rpe:"9",d:"3 min"},
+    {n:"Sentadilla en multipower",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Extensión cuádriceps pie punta/neutro",s:"5",r:"10-10-8-8-8",rpe:"9",d:"90s"},
+    {n:"Hip thrust barra + banda",s:"5",r:"6-6-6-4-4",rpe:"9",d:"2.5 min"},
+    {n:"Abducción polea baja con tobillera",s:"4",r:"12-12-12-12/lado",rpe:"8-9",d:"60s"},
+    {n:"Gemelo en prensa de pierna",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=23)return{t:"🦵 Legs A — Miércoles · Peaking",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa de pierna",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Sentadilla goblet (mancuerna)",s:"4",r:"6-6-6-6",rpe:"9",d:"3 min"},
+    {n:"Extensión de cuádriceps",s:"4",r:"8-8-8-8",rpe:"9",d:"90s"},
+    {n:"Hip thrust con barra",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Abducción de cadera (máquina)",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+    {n:"Gemelo de pie en máquina",s:"4",r:"10-10-10-10",rpe:"9",d:"60s"},
+  ]};
+  if(w<=25)return{t:"🦵 Legs A — Miércoles · Peaking Máximo",s:"Cuádriceps · Glúteo · Gemelos",e:[
+    {n:"Prensa de pierna",s:"5",r:"6-4-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Sentadilla goblet (mancuerna)",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Extensión de cuádriceps",s:"5",r:"8-8-6-6-6",rpe:"9",d:"90s"},
+    {n:"Hip thrust con barra",s:"5",r:"6-4-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Abducción de cadera (máquina)",s:"4",r:"12-12-12-12",rpe:"9",d:"60s"},
+    {n:"Gemelo de pie en máquina",s:"4",r:"10-10-10-10",rpe:"9",d:"60s"},
+  ]};
+  return{t:"🦵 Legs A — Deload ⚡",s:"Misma carga · Volumen -40%",e:[
+    {n:"Prensa de pierna",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Extensión de cuádriceps",s:"2",r:"12-12",rpe:"6-7",d:"90s"},
+    {n:"Hip thrust con barra",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Gemelo de pie en máquina",s:"2",r:"15-15",rpe:"6-7",d:"60s"},
+  ]};
+}
+
+function getLegsB(w){
+  if(w<=2)return{t:"🦵 Legs B — Viernes · Cadena Posterior",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"4",r:"10-10-10-10",rpe:"8",d:"2 min"},
+    {n:"Hip thrust con barra",s:"4",r:"10-10-10-10",rpe:"8",d:"2 min"},
+    {n:"Curl nórdico excéntrico (6s bajando)",s:"3",r:"6-6-6",rpe:"—",d:"2 min"},
+    {n:"Prensa pies arriba",s:"3",r:"12-12-12",rpe:"8",d:"90s"},
+    {n:"Gemelo sentado (máquina)",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+    {n:"Dead bug",s:"3",r:"10-10-10/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"3",r:"10-10-10/lado",rpe:"7-8",d:"60s"},
+  ]};
+  if(w<=4)return{t:"🦵 Legs B — Viernes · Cadena Posterior",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"4",r:"10-10-8-8",rpe:"8",d:"2 min"},
+    {n:"Hip thrust con barra",s:"4",r:"10-10-8-8",rpe:"8-9",d:"2 min"},
+    {n:"Curl nórdico excéntrico (5s bajando)",s:"3",r:"6-6-6",rpe:"—",d:"2 min"},
+    {n:"Prensa pies arriba",s:"4",r:"12-12-12-12",rpe:"8",d:"90s"},
+    {n:"Gemelo sentado (máquina)",s:"4",r:"15-15-15-15",rpe:"8",d:"60s"},
+    {n:"Dead bug",s:"3",r:"12-12-12/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"12-12-12-12/lado",rpe:"8",d:"60s"},
+  ]};
+  if(w<=7)return{t:"🦵 Legs B — Viernes · Cadena Posterior",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Hip thrust con barra",s:"4",r:"8-8-8-8",rpe:"8-9",d:"2.5 min"},
+    {n:"Curl nórdico excéntrico (4s bajando)",s:"3",r:"8-8-8",rpe:"—",d:"2 min"},
+    {n:"Prensa pies arriba",s:"4",r:"10-10-10-10",rpe:"8-9",d:"2 min"},
+    {n:"Gemelo sentado (máquina)",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+    {n:"Dead bug",s:"4",r:"12-12-12-12/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"12-12-12-12/lado",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=10)return{t:"🦵 Legs B — Viernes · Cadena Posterior",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"5",r:"8-8-6-6-6",rpe:"8-9",d:"2.5 min"},
+    {n:"Hip thrust con barra",s:"5",r:"8-8-6-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Curl nórdico excéntrico (4s bajando)",s:"4",r:"8-8-8-8",rpe:"—",d:"2 min"},
+    {n:"Prensa pies arriba",s:"4",r:"10-10-8-8",rpe:"8-9",d:"2 min"},
+    {n:"Gemelo sentado (máquina)",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+    {n:"Dead bug",s:"4",r:"12-12-12-12/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press",s:"4",r:"12-12-12-12/lado",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=14)return{t:"🦵 Legs B — Viernes · Cadena Posterior (Variantes)",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral sentado (máquina)",s:"4",r:"10-10-10-10",rpe:"8-9",d:"2 min"},
+    {n:"Hip thrust unilateral (una pierna)",s:"4",r:"10-10-10-10/pierna",rpe:"8-9",d:"2 min"},
+    {n:"Curl nórdico + pausa 2s (4s bajando)",s:"4",r:"6-6-6-6",rpe:"—",d:"2.5 min"},
+    {n:"Prensa unilateral pies arriba",s:"3",r:"12-12-12/pierna",rpe:"8",d:"90s"},
+    {n:"Gemelo sentado pausa 3s abajo",s:"4",r:"15-15-15-15",rpe:"8-9",d:"60s"},
+    {n:"Dead bug con banda en brazos",s:"4",r:"10-10-10-10/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press posición media squat",s:"4",r:"12-12-12-12/lado",rpe:"8-9",d:"60s"},
+  ]};
+  if(w<=20)return{t:"🦵 Legs B — Viernes · Cadena Posterior Máx (Variantes)",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral sentado (máquina)",s:"5",r:"8-8-6-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Hip thrust unilateral (una pierna)",s:"5",r:"8-8-6-6-6/pierna",rpe:"9",d:"2.5 min"},
+    {n:"Curl nórdico + pausa 2s (3s bajando)",s:"4",r:"8-8-8-8",rpe:"—",d:"2.5 min"},
+    {n:"Prensa unilateral pies arriba",s:"4",r:"10-10-10-10/pierna",rpe:"8-9",d:"90s"},
+    {n:"Gemelo sentado pausa 3s abajo",s:"4",r:"12-12-12-12",rpe:"8-9",d:"60s"},
+    {n:"Dead bug con banda en brazos",s:"4",r:"12-12-12-12/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press posición media squat",s:"4",r:"15-15-15-15/lado",rpe:"9",d:"60s"},
+  ]};
+  if(w<=23)return{t:"🦵 Legs B — Viernes · Cadena Posterior Peaking",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"4",r:"6-6-6-6",rpe:"9",d:"2.5 min"},
+    {n:"Hip thrust con barra",s:"4",r:"6-6-4-4",rpe:"9",d:"3 min"},
+    {n:"Curl nórdico (3s bajando)",s:"4",r:"8-8-8-8",rpe:"—",d:"2.5 min"},
+    {n:"Prensa pies arriba",s:"4",r:"8-8-8-8",rpe:"9",d:"2 min"},
+    {n:"Gemelo sentado (máquina)",s:"4",r:"10-10-10-10",rpe:"9",d:"60s"},
+    {n:"Dead bug con banda",s:"4",r:"12-12-12-12/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press posición media squat",s:"4",r:"15-15-15-15/lado",rpe:"9",d:"60s"},
+  ]};
+  if(w<=25)return{t:"🦵 Legs B — Viernes · Peaking Máximo",s:"Isquiotibiales · Glúteo · Core",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"5",r:"6-6-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Hip thrust con barra",s:"5",r:"6-4-4-4-4",rpe:"9-10",d:"3 min"},
+    {n:"Curl nórdico (2s bajando)",s:"4",r:"8-8-8-8",rpe:"—",d:"2.5 min"},
+    {n:"Prensa pies arriba",s:"4",r:"8-8-6-6",rpe:"9",d:"2 min"},
+    {n:"Gemelo sentado (máquina)",s:"4",r:"10-10-10-10",rpe:"9",d:"60s"},
+    {n:"Dead bug con banda",s:"4",r:"12-12-12-12/lado",rpe:"—",d:"45s"},
+    {n:"Pallof press posición media squat",s:"4",r:"15-15-15-15/lado",rpe:"9",d:"60s"},
+  ]};
+  return{t:"🦵 Legs B — Deload ⚡",s:"Misma carga · Volumen -40%",e:[
+    {n:"Curl femoral tumbado (máquina)",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Hip thrust con barra",s:"2",r:"10-10",rpe:"6-7",d:"2 min"},
+    {n:"Gemelo sentado (máquina)",s:"2",r:"12-12",rpe:"6-7",d:"60s"},
+    {n:"Dead bug",s:"2",r:"10-10/lado",rpe:"—",d:"45s"},
+  ]};
+}
+
+function getWalk(w){
+  const d=[null,
+    {dur:"45 min",vel:"5.5-6 km/h",inc:"4%",mochila:null},
+    {dur:"50 min",vel:"6 km/h",inc:"5%",mochila:null},
+    {dur:"55 min",vel:"6 km/h",inc:"6%",mochila:null},
+    {dur:"60 min",vel:"6 km/h",inc:"6-8%",mochila:null},
+    {dur:"65 min",vel:"6 km/h",inc:"8%",mochila:null},
+    {dur:"75 min",vel:"6 km/h",inc:"8%",mochila:null},
+    {dur:"90 min",vel:"6-6.5 km/h",inc:"8-10%",mochila:null},
+    {dur:"90 min",vel:"6.5 km/h",inc:"10%",mochila:null},
+    {dur:"105 min",vel:"6.5 km/h",inc:"10%",mochila:null},
+    {dur:"120 min",vel:"6.5 km/h",inc:"10%",mochila:null},
+    {dur:"90 min",vel:"normal",inc:"Exterior",mochila:null},
+    {dur:"100 min",vel:"normal",inc:"Exterior",mochila:null},
+    {dur:"110 min",vel:"normal",inc:"Exterior",mochila:null},
+    {dur:"120 min",vel:"normal",inc:"Exterior",mochila:null},
+    {dur:"130 min",vel:"normal",inc:"Exterior",mochila:null},
+    {dur:"140 min",vel:"normal",inc:"Exterior",mochila:null},
+    {dur:"150 min",vel:"normal",inc:"Exterior",mochila:"3 kg"},
+    {dur:"160 min",vel:"normal",inc:"Exterior",mochila:"4 kg"},
+    {dur:"170 min",vel:"normal",inc:"Exterior",mochila:"5 kg"},
+    {dur:"180 min",vel:"normal",inc:"Exterior",mochila:"5 kg"},
+    {dur:"180 min",vel:"normal",inc:"Exterior",mochila:"5 kg"},
+    {dur:"200 min",vel:"normal",inc:"Exterior",mochila:"6 kg"},
+    {dur:"220 min",vel:"normal",inc:"Exterior",mochila:"6 kg"},
+    {dur:"240 min",vel:"normal",inc:"Exterior",mochila:"7 kg"},
+    {dur:"180 min",vel:"normal",inc:"Exterior",mochila:"5 kg"},
+    {dur:"45 min suave",vel:"5.5 km/h",inc:"0% plano",mochila:null},
+  ];
+  const x=d[w]||d[1];
+  return{t:"🚶 Caminata Progresiva — Sábado",s:"Específico para Japón · FC 115-130 ppm · Zona 2",e:[
+    {n:"Duración: "+x.dur,s:"—",r:"FC 115-130 ppm",rpe:"Zona 2",d:"—"},
+    {n:x.inc==="Exterior"?"Terreno exterior variado":"Cinta inclinada "+x.inc,s:"—",r:x.vel,rpe:"—",d:"—"},
+    {n:x.mochila?"Mochila: "+x.mochila:"Sin mochila",s:"—",r:"—",rpe:"—",d:"—"},
+  ]};
+}
+
+function getWorkout(day,week){
+  if(day==="lunes")return getPushA(week);
+  if(day==="martes")return getPull(week);
+  if(day==="miercoles")return getLegsA(week);
+  if(day==="jueves")return getPushB(week);
+  if(day==="viernes")return getLegsB(week);
+  if(day==="sabado")return getWalk(week);
+  return null;
+}
+
+// ── STORAGE ──────────────────────────────────────────────────────
+function load(){try{const r=localStorage.getItem("jp26v2");return r?JSON.parse(r):{}}catch{return{}}}
+function save(d){try{localStorage.setItem("jp26v2",JSON.stringify(d))}catch{}}
+
+// ── STYLES helper ────────────────────────────────────────────────
+const s=(base,extra={})=>({...base,...extra});
+
+// ── MINI CHART (SVG) ─────────────────────────────────────────────
+function MiniChart({data,color,label,unit}){
+  const pts=data.filter(d=>d.val!=null);
+  if(pts.length<2)return h("div",{style:{padding:"12px",textAlign:"center",color:"#333",fontSize:11}},"Sin suficientes datos aún");
+  const vals=pts.map(d=>d.val);
+  const mn=Math.min(...vals),mx=Math.max(...vals),range=mx-mn||1;
+  const W=300,H=70,P=10;
+  const xStep=(W-P*2)/(pts.length-1);
+  const points=pts.map((d,i)=>(P+i*xStep)+","+(H-P-((d.val-mn)/range)*(H-P*2))).join(" ");
+  const last=pts[pts.length-1],first=pts[0];
+  const delta=last&&first?(last.val-first.val).toFixed(1):null;
+  const dColor=parseFloat(delta)>0?(color===C.green||color===C.teal?C.red:C.green):C.green;
+  return h("div",null,
+    h("div",{style:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}},
+      h("span",{style:{fontSize:10,color:"#555"}},label),
+      delta!=null&&h("span",{style:{fontSize:10,fontWeight:700,color:dColor}},(parseFloat(delta)>0?"+":"")+delta+(unit||""))
+    ),
+    h("svg",{width:"100%",viewBox:"0 0 "+W+" "+H,style:{overflow:"visible"}},
+      h("polyline",{points,fill:"none",stroke:color,strokeWidth:"2",strokeLinecap:"round",strokeLinejoin:"round"}),
+      pts.map((d,i)=>h("circle",{key:i,cx:P+i*xStep,cy:H-P-((d.val-mn)/range)*(H-P*2),r:"3",fill:color})),
+      h("text",{x:P+(pts.length-1)*xStep,y:H-P-((last.val-mn)/range)*(H-P*2)-8,textAnchor:"middle",fontSize:"9",fill:color,fontWeight:"700"},last.val+(unit||""))
+    )
+  );
+}
+
+// ── APP ──────────────────────────────────────────────────────────
+function App(){
+  const [tab,setTab]=useState("plan");
+  const [week,setWeek]=useState(1);
+  const [day,setDay]=useState("lunes");
+  const [gymData,setGymData]=useState({});
+  const [weightData,setWeightData]=useState({});
+  const [showWarmup,setShowWarmup]=useState(false);
+  const [chartSub,setChartSub]=useState("comp");
+  const [chartVis,setChartVis]=useState({kg:true,gras:true,musc:true});
+  const [selEx,setSelEx]=useState("");
+  const [cardioMetric,setCardioMetric]=useState("dur");
+  const [copied,setCopied]=useState(false);
+
+  useEffect(()=>{const s=load();setGymData(s.gym||{});setWeightData(s.weight||{});},[]);
+  const updGym=(k,v)=>{const u={...gymData,[k]:v};setGymData(u);save({gym:u,weight:weightData});};
+  const updWeight=(k,v)=>{const u={...weightData,[k]:v};setWeightData(u);save({gym:gymData,weight:u});};
+
+  const phase=getPhase(week);
+  const workout=getWorkout(day,week);
+  const dc=DCOLORS[day];
+
+  // week averages for comp chart
+  const weekAvgs=useMemo(()=>{
+    return Array.from({length:26},(_,i)=>i+1).map(w=>{
+      const start=new Date(JAPAN_START);start.setDate(start.getDate()+(w-1)*7);
+      const days=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(d.getDate()+i);return d.toISOString().split("T")[0];});
+      const entries=days.map(d=>weightData[d]).filter(e=>e&&e.kg);
+      if(!entries.length)return{w,kg:null,gras:null,musc:null};
+      const avg=f=>{const v=entries.filter(e=>e[f]);return v.length?parseFloat((v.reduce((s,e)=>s+(parseFloat(e[f])||0),0)/v.length).toFixed(1)):null;};
+      return{w,kg:avg("kg"),gras:avg("gras"),musc:avg("musc")};
+    }).filter(d=>d.kg||d.gras||d.musc);
+  },[weightData]);
+
+  // all exercises with data
+  const allExercises=useMemo(()=>{
+    const set=new Set();
+    Object.keys(gymData).forEach(key=>{
+      const m=key.match(/^w(\d+)_(\w+)$/);
+      if(!m)return;
+      const wk=getWorkout(m[2],parseInt(m[1]));
+      if(!wk)return;
+      wk.e.forEach((ej,i)=>{
+        const has=Object.keys(gymData[key]).some(k=>k.startsWith("kg_"+i+"_")&&parseFloat(gymData[key][k])>0);
+        if(has)set.add(ej.n);
+      });
+    });
+    return Array.from(set).sort();
+  },[gymData]);
+
+  useEffect(()=>{if(allExercises.length&&!selEx)setSelEx(allExercises[0]);},[allExercises.join(",")]);
+
+  const gymChartData=useMemo(()=>{
+    if(!selEx)return[];
+    const pts=[];
+    for(let w=1;w<=26;w++){
+      DAYS.forEach(d=>{
+        const key="w"+w+"_"+d;
+        if(!gymData[key])return;
+        const wk=getWorkout(d,w);if(!wk)return;
+        const idx=wk.e.findIndex(e=>e.n===selEx);if(idx<0)return;
+        const kgs=Object.keys(gymData[key]).filter(k=>k.startsWith("kg_"+idx+"_")).map(k=>parseFloat(gymData[key][k])||0).filter(v=>v>0);
+        if(!kgs.length)return;
+        pts.push({w,val:Math.max(...kgs),label:"S"+w});
+      });
+    }
+    return pts;
+  },[selEx,gymData]);
+
+  const cardioData=useMemo(()=>{
+    const pts=[];
+    for(let w=1;w<=26;w++){
+      const e=gymData["w"+w+"_sabado"];
+      if(!e)continue;
+      const val=cardioMetric==="dur"?parseFloat(e.duracion):parseFloat(e.fc);
+      if(val)pts.push({w,val,label:"S"+w});
+    }
+    return pts;
+  },[cardioMetric,gymData]);
+
+  function buildReport(){
+    let txt="═══════════════════════════════════\n   REPORTE — PLAN JAPÓN 🇯🇵\n   "+new Date().toLocaleDateString("es-MX",{day:"numeric",month:"long",year:"numeric"})+"\n═══════════════════════════════════\n\n";
+    txt+="📊 COMPOSICIÓN CORPORAL\n───────────────────────────────────\n";
+    weekAvgs.forEach(d=>{
+      txt+="Sem "+d.w+": "+(d.kg?d.kg+" kg":"—");
+      if(d.gras)txt+=" | Grasa "+d.gras+"%";
+      if(d.musc)txt+=" | Músculo "+d.musc+"%";
+      txt+="\n";
+    });
+    txt+="\n💪 CARGAS\n───────────────────────────────────\n";
+    for(let w=1;w<=26;w++){
+      let wTxt="",has=false;
+      DAYS.forEach(d=>{
+        const key="w"+w+"_"+d;
+        const entry=gymData[key];
+        if(!entry||!Object.keys(entry).length)return;
+        const wk=getWorkout(d,w);if(!wk)return;
+        has=true;wTxt+="\n  "+wk.t+"\n";
+        wk.e.forEach((ej,i)=>{
+          const kgs=Object.keys(entry).filter(k=>k.startsWith("kg_"+i+"_")).map(k=>parseFloat(entry[k])||0).filter(v=>v>0);
+          const rpes=Object.keys(entry).filter(k=>k.startsWith("rpe_"+i+"_")).map(k=>entry[k]).filter(Boolean);
+          if(!kgs.length&&!entry["done_"+i])return;
+          wTxt+="  "+(entry["done_"+i]?"✓":"○")+" "+ej.n+"\n";
+          if(kgs.length)wTxt+="     kg: "+kgs.join(" / ")+"\n";
+          if(rpes.length)wTxt+="     RPE: "+rpes.join(" / ")+"\n";
+        });
+        if(entry.notas)wTxt+="  Notas: "+entry.notas+"\n";
+      });
+      if(has)txt+="\nSEM "+w+" — "+getWeekDates(w)+"\n"+wTxt;
+    }
+    txt+="\n🚶 CAMINATAS\n───────────────────────────────────\n";
+    for(let w=1;w<=26;w++){
+      const e=gymData["w"+w+"_sabado"];
+      if(!e||(!e.duracion&&!e.fc))continue;
+      txt+="Sem "+w+": "+(e.duracion?e.duracion+" min":"—")+" | FC "+(e.fc||"—")+" ppm\n";
+    }
+    txt+="\n═══════════════════════════════════\nPega este texto en el chat con Claude.\n═══════════════════════════════════";
+    return txt;
+  }
+
+  const hasData=Object.keys(gymData).length>0||Object.keys(weightData).length>0;
+
+  // ── RENDER HELPERS ────────────────────────────────────────────
+  function Pill(label,val,color){
+    return h("div",{key:label,style:{background:color+"20",borderRadius:6,padding:"3px 8px"}},
+      h("span",{style:{fontSize:8,color:"#555"}},label+": "),
+      h("span",{style:{fontSize:10,fontWeight:700,color}},val)
+    );
+  }
+
+  function WeekSelector(){
+    return h("div",{style:{display:"flex",gap:4,flexWrap:"wrap",marginBottom:10}},
+      Array.from({length:26},(_,i)=>i+1).map(w=>{
+        const ph=getPhase(w),isSel=w===week;
+        return h("button",{key:w,onClick:()=>setWeek(w),style:{width:33,height:33,borderRadius:8,border:"none",background:isSel?ph.color:"rgba(255,255,255,0.05)",color:isSel?"#000":"#555",fontWeight:isSel?800:400,fontSize:11,cursor:"pointer",boxShadow:isSel?"0 0 10px "+ph.color+"55":"none"}},w);
+      })
+    );
+  }
+
+  function DaySelector(){
+    return h("div",{style:{display:"flex",gap:4,marginBottom:14}},
+      DAYS.map(dk=>{
+        const isSel=dk===day,accent=DCOLORS[dk];
+        const hasDot=tab==="tracker"&&Object.keys(gymData["w"+week+"_"+dk]||{}).length>0;
+        return h("button",{key:dk,onClick:()=>setDay(dk),style:{flex:1,padding:"7px 2px",borderRadius:8,border:"none",background:isSel?accent+"20":"rgba(255,255,255,0.04)",color:isSel?accent:"#444",fontSize:9,fontWeight:isSel?700:400,cursor:"pointer",borderBottom:isSel?"2px solid "+accent:"2px solid transparent",position:"relative"}},
+          h("div",null,DICONS[dk]),
+          h("div",null,DLABELS[dk]),
+          hasDot&&h("div",{style:{position:"absolute",top:2,right:4,width:4,height:4,borderRadius:"50%",background:accent}})
+        );
+      })
+    );
+  }
+
+  function PhaseInfo(){
+    return h("div",{style:{padding:"8px 12px",background:phase.color+"12",border:"1px solid "+phase.color+"25",borderRadius:10,marginBottom:12}},
+      h("div",{style:{fontSize:12,fontWeight:700,color:phase.color}},"Fase "+phase.id+": "+phase.name+" · "+getWeekDates(week)),
+      h("div",{style:{display:"flex",gap:5,marginTop:5}},[
+        Pill("RPE",phase.rpe,phase.color),
+        Pill("Series",phase.sets,phase.color),
+        Pill("Reps",phase.reps,phase.color),
+      ])
+    );
+  }
+
+  function WorkoutCard(){
+    if(!workout)return null;
+    return h("div",{style:{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,overflow:"hidden"}},
+      h("div",{style:{padding:"13px 16px",background:dc+"12",borderBottom:"2px solid "+dc+"25"}},
+        h("div",{style:{fontSize:14,fontWeight:800}},workout.t),
+        h("div",{style:{fontSize:11,color:"#555",marginTop:2}},workout.s)
+      ),
+      workout.e.map((ej,i)=>{
+        const reps=ej.r.split("-");
+        return h("div",{key:i,style:{padding:"10px 16px",borderBottom:"1px solid rgba(255,255,255,0.04)"}},
+          h("div",{style:{display:"flex",alignItems:"flex-start",gap:10}},
+            h("div",{style:{width:20,height:20,borderRadius:6,background:dc+"18",color:dc,fontSize:10,fontWeight:800,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1}},i+1),
+            h("div",{style:{flex:1}},
+              h("div",{style:{fontSize:12,fontWeight:700,color:"#ddd",marginBottom:4}},ej.n),
+              h("div",{style:{display:"flex",gap:5,flexWrap:"wrap"}},
+                ej.s!=="—"&&h("span",{style:{fontSize:9,background:dc+"18",color:dc,borderRadius:4,padding:"2px 6px",fontWeight:700}},ej.s+" series"),
+                h("span",{style:{fontSize:9,background:"rgba(255,255,255,0.06)",color:"#aaa",borderRadius:4,padding:"2px 6px"}},ej.r+" reps"),
+                ej.rpe!=="—"&&h("span",{style:{fontSize:9,background:"rgba(252,92,101,0.12)",color:C.red,borderRadius:4,padding:"2px 6px"}},"RPE "+ej.rpe),
+                h("span",{style:{fontSize:9,background:"rgba(255,255,255,0.04)",color:"#555",borderRadius:4,padding:"2px 6px"}},"⏱ "+ej.d)
+              )
+            )
+          )
+        );
+      }),
+      h("div",{style:{padding:"9px 14px",background:"rgba(252,92,101,0.05)",fontSize:10,color:C.red,lineHeight:1.6}},
+        "⚠️ Core activado · Columna neutral · Sin redondear lumbar · Dolor irradiado = stop"
+      )
+    );
+  }
+
+  function TrackerContent(){
+    const key="w"+week+"_"+day;
+    const entry=gymData[key]||{};
+    const isSat=day==="sabado";
+    return h("div",null,
+      workout&&h("div",{style:{fontSize:13,fontWeight:700,color:dc,marginBottom:12}},workout.t),
+      isSat?h("div",null,
+        h("div",{style:{fontSize:11,color:"#666",marginBottom:10}},"Registra tu caminata de hoy:"),
+        [["duracion","⏱ Duración (min)"],["fc","❤️ FC promedio (ppm)"]].map(([f,l])=>
+          h("div",{key:f,style:{marginBottom:10}},
+            h("div",{style:{fontSize:10,color:"#555",marginBottom:4}},l),
+            h("input",{type:"number",value:entry[f]||"",onChange:e=>updGym(key,{...entry,[f]:e.target.value}),style:{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,color:"#fff",fontSize:13,padding:"8px 12px",outline:"none",boxSizing:"border-box"}})
+          )
+        ),
+        h("div",{style:{fontSize:10,color:"#555",marginBottom:4}},"📝 Notas"),
+        h("textarea",{value:entry.notas||"",onChange:e=>updGym(key,{...entry,notas:e.target.value}),rows:2,style:{width:"100%",background:"rgba(255,255,255,0.04)",border:"1px solid rgba(255,255,255,0.08)",borderRadius:8,color:"#ccc",fontSize:11,padding:"8px 10px",resize:"none",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}})
+      ):workout&&h("div",null,
+        workout.e.map((ej,i)=>{
+          const done=entry["done_"+i]||false;
+          const reps=ej.r.split("-");
+          return h("div",{key:i,style:{padding:"9px 0",borderBottom:"1px solid rgba(255,255,255,0.04)",opacity:done?0.4:1}},
+            h("div",{style:{display:"flex",alignItems:"center",gap:8,marginBottom:reps.length>1&&ej.s!=="—"?7:0}},
+              h("input",{type:"checkbox",checked:done,onChange:e=>updGym(key,{...entry,["done_"+i]:e.target.checked}),style:{accentColor:dc,width:16,height:16,flexShrink:0}}),
+              h("div",{style:{flex:1,fontSize:12,fontWeight:600,color:done?"#444":"#ddd"}},ej.n),
+              h("div",{style:{fontSize:9,color:"#555"}},ej.s+"×")
+            ),
+            reps.length>1&&ej.s!=="—"&&h("div",{style:{display:"grid",gridTemplateColumns:"repeat("+Math.min(reps.length,5)+",1fr)",gap:4,marginLeft:24}},
+              reps.map((r,si)=>h("div",{key:si,style:{background:"rgba(255,255,255,0.04)",borderRadius:7,padding:"5px 3px",textAlign:"center"}},
+                h("div",{style:{fontSize:8,color:"#444",marginBottom:2}},"S"+(si+1)+"·"+r),
+                h("input",{type:"number",placeholder:"kg",value:entry["kg_"+i+"_"+si]||"",onChange:e=>updGym(key,{...entry,["kg_"+i+"_"+si]:e.target.value}),style:{width:"100%",background:"rgba(255,255,255,0.08)",border:"1px solid "+dc+"25",borderRadius:5,color:"#fff",fontSize:11,padding:"3px 2px",textAlign:"center",outline:"none",boxSizing:"border-box"}}),
+                h("input",{type:"number",placeholder:"RPE",value:entry["rpe_"+i+"_"+si]||"",onChange:e=>updGym(key,{...entry,["rpe_"+i+"_"+si]:e.target.value}),style:{width:"100%",background:"rgba(255,255,255,0.04)",border:"none",borderRadius:5,color:C.gold,fontSize:9,padding:"2px",textAlign:"center",outline:"none",boxSizing:"border-box",marginTop:2}})
+              ))
+            )
+          );
+        }),
+        h("textarea",{placeholder:"Notas de la sesión...",value:entry.notas||"",onChange:e=>updGym(key,{...entry,notas:e.target.value}),rows:2,style:{marginTop:10,width:"100%",background:"rgba(255,255,255,0.03)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:8,color:"#ccc",fontSize:11,padding:"8px 10px",resize:"none",outline:"none",boxSizing:"border-box",fontFamily:"inherit"}})
+      )
+    );
+  }
+
+  function WeightGrid(){
+    const days=["Lun","Mar","Mié","Jue","Vie","Sáb","Dom"];
+    const start=new Date(JAPAN_START);start.setDate(start.getDate()+(week-1)*7);
+    return h("div",null,
+      h("div",{style:{fontSize:10,fontWeight:700,letterSpacing:2,color:"#444",marginBottom:10,textTransform:"uppercase"}},"⚖️ Peso diario — ayunas · post-baño"),
+      h("div",{style:{display:"grid",gridTemplateColumns:"repeat(7,1fr)",gap:4}},
+        days.map((d,i)=>{
+          const date=new Date(start);date.setDate(date.getDate()+i);
+          const key=date.toISOString().split("T")[0];
+          const entry=weightData[key]||{};
+          return h("div",{key,style:{background:"rgba(255,255,255,0.04)",borderRadius:9,padding:"6px 3px",border:"1px solid rgba(255,255,255,0.07)"}},
+            h("div",{style:{fontSize:9,fontWeight:700,color:"#aaa",textAlign:"center",marginBottom:4}},d,h("br"),h("span",{style:{fontWeight:400,fontSize:8}},date.getDate()+"/"+(date.getMonth()+1))),
+            [["kg","kg"],["gras","% G"],["musc","% M"]].map(([f,l])=>
+              h("div",{key:f,style:{marginBottom:3}},
+                h("div",{style:{fontSize:7,color:"#444",textAlign:"center"}},l),
+                h("input",{type:"number",step:"0.1",placeholder:"—",value:entry[f]||"",onChange:e=>updWeight(key,{...entry,[f]:e.target.value}),style:{width:"100%",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:5,color:"#fff",fontSize:10,padding:"2px 1px",textAlign:"center",outline:"none",boxSizing:"border-box"}})
+              )
+            )
+          );
+        })
+      )
+    );
+  }
+
+  const TABS=[["plan","📅 Plan"],["tracker","📊 Tracker"],["graficas","📈 Gráficas"],["exportar","📋 Exportar"],["protocolo","🎯 Protocolo"]];
+
+  return h("div",{style:{minHeight:"100vh",background:"#080810",color:"#fff"}},
+
+    // HEADER
+    h("div",{style:{background:"linear-gradient(160deg,#0a0a18,#080810)",borderBottom:"1px solid rgba(255,255,255,0.06)",padding:"18px 16px 0"}},
+      h("div",{style:{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:14}},
+        h("div",null,
+          h("div",{style:{fontSize:9,letterSpacing:3,color:"#333",fontWeight:700,textTransform:"uppercase",marginBottom:3}},"Plan 26 Semanas"),
+          h("div",{style:{fontSize:20,fontWeight:800,letterSpacing:-0.5}},"Japón 🇯🇵"),
+          h("div",{style:{fontSize:11,color:"#444",marginTop:2}},"31 ago 2026 → 2 mar 2027 · PPL")
+        ),
+        h("div",{style:{background:C.gold+"15",border:"1px solid "+C.gold+"35",borderRadius:11,padding:"7px 11px",textAlign:"center"}},
+          h("div",{style:{fontSize:9,color:C.gold,fontWeight:700}},"VUELO"),
+          h("div",{style:{fontSize:12,fontWeight:800,color:C.gold}},"2 Mar"),
+          h("div",{style:{fontSize:9,color:C.gold}},"✈️ 2027")
+        )
+      ),
+      h("div",{style:{display:"flex",overflowX:"auto",scrollbarWidth:"none"}},
+        TABS.map(([id,label])=>h("button",{key:id,onClick:()=>setTab(id),style:{flexShrink:0,padding:"9px 10px",border:"none",background:"transparent",color:tab===id?"#fff":"#444",fontSize:10,fontWeight:tab===id?700:400,borderBottom:tab===id?"2px solid "+C.gold:"2px solid transparent",cursor:"pointer",whiteSpace:"nowrap"}},label))
+      )
+    ),
+
+    // CONTENT
+    h("div",{style:{padding:"14px 14px 0"}},
+
+      // WEEK + DAY (plan & tracker)
+      (tab==="plan"||tab==="tracker")&&h("div",null,
+        // Phase strip
+        h("div",{style:{display:"flex",gap:3,marginBottom:10,overflowX:"auto",scrollbarWidth:"none"}},
+          PHASES.map(p=>h("div",{key:p.id,style:{flexShrink:0,background:p.color+"15",border:"1px solid "+p.color+"30",borderRadius:7,padding:"4px 7px",minWidth:p.weeks.length*26}},
+            h("div",{style:{fontSize:8,fontWeight:800,color:p.color,whiteSpace:"nowrap"}},p.name),
+            h("div",{style:{fontSize:7,color:"#444"}},"S"+p.weeks[0]+(p.weeks.length>1?"–"+p.weeks[p.weeks.length-1]:""))
+          ))
+        ),
+        WeekSelector(),
+        PhaseInfo(),
+        DaySelector()
+      ),
+
+      // PLAN
+      tab==="plan"&&h("div",null,
+        h("button",{onClick:()=>setShowWarmup(!showWarmup),style:{width:"100%",marginBottom:10,padding:"8px 12px",background:C.gold+"10",border:"1px solid "+C.gold+"25",borderRadius:9,color:C.gold,fontSize:11,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"space-between",fontWeight:600}},
+          h("span",null,"🧘 Calentamiento diario (antes de empezar)"),
+          h("span",{style:{fontSize:10}},showWarmup?"▲":"▼")
+        ),
+        showWarmup&&h("div",{style:{marginBottom:10,background:"rgba(255,255,255,0.02)",border:"1px solid "+C.gold+"20",borderRadius:9,padding:11}},
+          WARMUP.map((w,i)=>h("div",{key:i,style:{fontSize:11,color:"#aaa",padding:"4px 0",borderBottom:i<WARMUP.length-1?"1px solid rgba(255,255,255,0.04)":"none"}},
+            h("span",{style:{color:C.gold,fontWeight:700,marginRight:6}},i+1+"."),w
+          ))
+        ),
+        WorkoutCard()
+      ),
+
+      // TRACKER
+      tab==="tracker"&&h("div",null,
+        h("div",{style:{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:14,marginBottom:12}},
+          TrackerContent()
+        ),
+        h("div",{style:{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:14}},
+          WeightGrid()
+        )
+      ),
+
+      // GRAFICAS
+      tab==="graficas"&&h("div",null,
+        h("div",{style:{display:"flex",gap:5,marginBottom:12}},
+          [["comp","⚖️ Composición"],["gym","💪 Gym"],["cardio","🚶 Cardio"]].map(([k,l])=>
+            h("button",{key:k,onClick:()=>setChartSub(k),style:{flex:1,padding:"7px 3px",background:chartSub===k?C.gold+"18":"rgba(255,255,255,0.04)",border:"1px solid "+(chartSub===k?C.gold:"rgba(255,255,255,0.07)"),borderRadius:9,color:chartSub===k?C.gold:"#444",fontSize:10,fontWeight:chartSub===k?700:400,cursor:"pointer"}},l)
+          )
+        ),
+        h("div",{style:{background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.07)",borderRadius:14,padding:14}},
+          chartSub==="comp"&&h("div",null,
+            h("div",{style:{display:"flex",gap:6,marginBottom:12,flexWrap:"wrap"}},
+              [{k:"kg",l:"Peso",c:C.gold,u:" kg"},{k:"gras",l:"% Grasa",c:C.red,u:"%"},{k:"musc",l:"% Músculo",c:C.green,u:"%"}].map(({k,l,c,u})=>
+                h("button",{key:k,onClick:()=>setChartVis(v=>({...v,[k]:!v[k]})),style:{display:"flex",alignItems:"center",gap:5,padding:"5px 10px",background:chartVis[k]?c+"20":"rgba(255,255,255,0.04)",border:"1px solid "+(chartVis[k]?c:"rgba(255,255,255,0.08)"),borderRadius:20,cursor:"pointer",color:chartVis[k]?c:"#444",fontSize:11,fontWeight:chartVis[k]?700:400}},
+                  h("div",{style:{width:8,height:8,borderRadius:"50%",background:chartVis[k]?c:"#333"}}),l
+                )
+              )
+            ),
+            [{k:"kg",c:C.gold,l:"Peso — promedio semanal",u:" kg"},{k:"gras",c:C.red,l:"% Grasa — promedio semanal",u:"%"},{k:"musc",c:C.green,l:"% Músculo — promedio semanal",u:"%"}].filter(x=>chartVis[x.k]).map(({k,c,l,u})=>
+              h("div",{key:k,style:{marginBottom:12}},
+                h(MiniChart,{data:weekAvgs.map(d=>({w:d.w,val:d[k]})),color:c,label:l,unit:u})
+              )
+            ),
+            !weekAvgs.length&&h("div",{style:{padding:20,textAlign:"center",color:"#333",fontSize:12}},"Registra peso diario en el Tracker para ver las gráficas.")
+          ),
+          chartSub==="gym"&&h("div",null,
+            allExercises.length?h("div",null,
+              h("select",{value:selEx,onChange:e=>setSelEx(e.target.value),style:{width:"100%",marginBottom:12,padding:"8px 11px",background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.1)",borderRadius:9,color:"#fff",fontSize:12,outline:"none"}},
+                allExercises.map(e=>h("option",{key:e,value:e},e))
+              ),
+              gymChartData.length>=2?h(MiniChart,{data:gymChartData,color:C.gold,label:selEx+" — kg máximo por sesión",unit:" kg"}):h("div",{style:{padding:16,textAlign:"center",color:"#333",fontSize:11}},"Necesitas al menos 2 sesiones registradas.")
+            ):h("div",{style:{padding:20,textAlign:"center",color:"#333",fontSize:12}},"Registra cargas en el Tracker para ver la progresión.")
+          ),
+          chartSub==="cardio"&&h("div",null,
+            h("div",{style:{display:"flex",gap:5,marginBottom:12}},
+              [["dur","⏱ Duración (min)"],["fc","❤️ FC prom (ppm)"]].map(([k,l])=>
+                h("button",{key:k,onClick:()=>setCardioMetric(k),style:{flex:1,padding:"6px",background:cardioMetric===k?C.green+"20":"rgba(255,255,255,0.04)",border:"1px solid "+(cardioMetric===k?C.green:"rgba(255,255,255,0.08)"),borderRadius:8,color:cardioMetric===k?C.green:"#444",fontSize:10,cursor:"pointer",fontWeight:cardioMetric===k?700:400}},l)
+              )
+            ),
+            cardioData.length>=2?h(MiniChart,{data:cardioData,color:C.green,label:cardioMetric==="dur"?"Duración caminata":"FC promedio caminata",unit:cardioMetric==="dur"?" min":" ppm"}):h("div",{style:{padding:16,textAlign:"center",color:"#333",fontSize:11}},"Registra tus caminatas del sábado para ver la progresión.")
+          )
+        )
+      ),
+
+      // EXPORTAR
+      tab==="exportar"&&h("div",null,
+        h("div",{style:{fontSize:10,fontWeight:700,color:"#444",letterSpacing:2,textTransform:"uppercase",marginBottom:12}},"📋 Exportar para análisis"),
+        h("div",{style:{background:C.teal+"10",border:"1px solid "+C.teal+"25",borderRadius:12,padding:13,marginBottom:14}},
+          h("div",{style:{fontSize:12,fontWeight:700,color:C.teal,marginBottom:8}},"¿Cómo funciona?"),
+          ["1. Registra tus cargas (kg) y RPE por serie en el Tracker.","2. Registra tu peso diario en ayunas.","3. Cada 1-2 semanas pulsa el botón de abajo.","4. Pega el texto en el chat para recibir recomendaciones."].map((s,i)=>
+            h("div",{key:i,style:{fontSize:11,color:"#aaa",marginBottom:4,lineHeight:1.5}},s)
+          )
+        ),
+        hasData?h("button",{onClick:()=>{navigator.clipboard.writeText(buildReport()).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),3000)});},style:{width:"100%",padding:"13px",background:copied?C.teal+"25":C.teal+"12",border:"2px solid "+(copied?C.teal:C.teal+"40"),borderRadius:12,color:C.teal,fontSize:14,fontWeight:800,cursor:"pointer"}},copied?"✅ ¡Copiado! Pégalo en el chat":"📋 Copiar reporte para Claude"):
+        h("div",{style:{padding:18,textAlign:"center",background:"rgba(255,255,255,0.02)",border:"1px solid rgba(255,255,255,0.06)",borderRadius:12,color:"#333",fontSize:12}},"Aún no hay datos. Ve al Tracker y empieza a registrar.")
+      ),
+
+      // PROTOCOLO
+      tab==="protocolo"&&h("div",null,
+        h("div",{style:{fontSize:10,fontWeight:700,color:"#444",letterSpacing:2,textTransform:"uppercase",marginBottom:12}},"🎯 Protocolo del proyecto"),
+        h("div",{style:{background:C.red+"08",border:"1px solid "+C.red+"20",borderRadius:10,padding:"9px 13px",marginBottom:13,fontSize:11,color:C.red,fontWeight:700,lineHeight:1.6}},
+          "Regla general: No cambiar el plan sin evidencia clara de que algo no está funcionando."
+        ),
+        [
+          {icon:"⚖️",t:"Registro diario",d:"Peso, % grasa y % músculo en ayunas, post-baño, misma hora todos los días."},
+          {icon:"🍽️",t:"Plan alimenticio",d:"Seguir equivalentes de Regina. Mínimo 85% adherencia semanal."},
+          {icon:"💪",t:"Entrenamiento",d:"5-6 días/semana. Sobrecarga progresiva. RPE controlado según la fase."},
+          {icon:"🚶",t:"Caminatas progresivas",d:"Sábados. De 45 min a 4 horas con mochila. Específico para Japón."},
+          {icon:"🧘",t:"Calentamiento diario",d:"4 ejercicios de movilidad de cadera antes de CADA sesión. Las 26 semanas."},
+          {icon:"💊",t:"Suplementación",d:"Creatina 7g diaria. Omega 3. Magnesio glicinato 300-400mg pre-sueño."},
+          {icon:"😴",t:"Descanso",d:"Mínimo 7-8 horas de sueño. Ajustar si hay fatiga acumulada."},
+          {icon:"💧",t:"Hidratación",d:"2-3 litros diarios. Más en días de entreno intenso."},
+          {icon:"🧠",t:"Enfoque mental",d:"Consistencia sobre perfección. No cambiar el plan sin evidencia clara."},
+          {icon:"🚫",t:"Prohibidos permanentes",d:"Cualquier variante de peso muerto. Desplantes en cualquier variante."},
+        ].map((item,i)=>h("div",{key:i,style:{display:"flex",gap:11,padding:"9px 0",borderBottom:"1px solid rgba(255,255,255,0.04)"}},
+          h("div",{style:{fontSize:17,flexShrink:0,marginTop:1}},item.icon),
+          h("div",null,
+            h("div",{style:{fontSize:12,fontWeight:700,color:"#ddd",marginBottom:2}},item.t),
+            h("div",{style:{fontSize:11,color:"#555",lineHeight:1.5}},item.d)
+          )
+        )),
+        h("div",{style:{marginTop:14,padding:"11px 13px",background:C.gold+"10",border:"1px solid "+C.gold+"25",borderRadius:11}},
+          h("div",{style:{fontSize:10,fontWeight:700,color:C.gold,letterSpacing:1,marginBottom:8}},"🧘 CALENTAMIENTO DIARIO"),
+          WARMUP.map((w,i)=>h("div",{key:i,style:{fontSize:11,color:"#aaa",padding:"4px 0",borderBottom:i<WARMUP.length-1?"1px solid rgba(255,255,255,0.04)":"none"}},i+1+". "+w))
+        )
+      )
+    )
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(h(App,null));
+</script>
+</body>
+</html>
